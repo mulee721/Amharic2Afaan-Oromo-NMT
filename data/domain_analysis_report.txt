@@ -1,0 +1,16 @@
+================================================================================
+AMHARIC TO AFAAN OROMO DATASET - DOMAIN CLASSIFICATION REPORT
+================================================================================
+
+Total Parallel Rows: 148,292
+Generated On: 2026-08-17 12:30:42
+
+DOMAIN BREAKDOWN
+--------------------------------------------------------------------------------
+General              114,965 pairs ( 77.5%)
+Religion               8,274 pairs (  5.6%)
+Education              6,049 pairs (  4.1%)
+Agriculture            5,951 pairs (  4.0%)
+Government             4,699 pairs (  3.2%)
+Business/Economy       4,323 pairs (  2.9%)
+Health/Medical         4,031 pairs (  2.7%)

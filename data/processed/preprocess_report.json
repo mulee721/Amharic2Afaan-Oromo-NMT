@@ -1,0 +1,69 @@
+{
+  "configuration": {
+    "source_column": "Amharic",
+    "target_column": "Oromo",
+    "domain_column": null,
+    "random_state": 42,
+    "min_words": 1,
+    "max_words": 80,
+    "max_ratio": 5.0,
+    "max_chars": 250,
+    "use_amharic_orthography_map": true,
+    "normalize_oromo_punctuation": true,
+    "remove_duplicates": true,
+    "preserve_case": true
+  },
+  "stats": {
+    "raw_rows": 148292,
+    "after_column_selection": 148292,
+    "after_normalization": 148292,
+    "after_dropna": 148291,
+    "removed_empty": 1,
+    "after_deduplication": 145975,
+    "removed_duplicates": 2316,
+    "after_quality_filter": 145958,
+    "removed_quality": 17,
+    "removed_length": 0,
+    "removed_ratio": 13,
+    "removed_characters": 4,
+    "removed_script": 0,
+    "removed_html": 0,
+    "removed_url": 0,
+    "removed_email": 0,
+    "removed_arabic_script": 0,
+    "removed_control_chars": 0,
+    "removed_replacement_chars": 0,
+    "removed_excessive_punctuation": 0,
+    "final_rows": 145958
+  },
+  "noise_summary": {
+    "html": 0,
+    "url": 0,
+    "email": 0,
+    "arabic_script": 0,
+    "control_chars": 0,
+    "replacement_chars": 0,
+    "excessive_punctuation": 0
+  },
+  "dataset_summary": {
+    "rows": 145958,
+    "source_total_words": 614192,
+    "target_total_words": 812654,
+    "source_avg_words": 4.21,
+    "target_avg_words": 5.57,
+    "source_min_words": 1,
+    "target_min_words": 1,
+    "source_max_words": 29,
+    "target_max_words": 35,
+    "source_avg_chars": 20.14,
+    "target_avg_chars": 36.6,
+    "source_max_chars": 134,
+    "target_max_chars": 224,
+    "duplicate_pairs": 0
+  },
+  "splits": {
+    "train": 116766,
+    "valid": 14596,
+    "test": 14596
+  }
+}
