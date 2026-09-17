@@ -1,0 +1,55 @@
+============================================================
+SENTENCEPIECE TOKENIZER EVALUATION REPORT
+============================================================
+Successfully loaded model. Total Vocabulary Size: 10000
+Loaded test dataset. Shape: (14596, 3)
+Columns found in CSV: ['Amharic', 'Oromo', 'domain']
+Mapping -> Amharic Column: 'Amharic' | Afaan Oromo Column: 'Oromo'
+
+--- Amharic Tokenization Metrics ---
+* Total Sentences Evaluated: 14,596
+* Tokens/Sentence:
+    - Mean   : 6.46
+    - Median : 6.0
+    - P95    : 13.0
+    - Max    : 40
+* Words/Sentence (Mean)  : 4.19
+* Compression Ratio (Subwords/Words) : 1.54
+* Unknown Token (<unk>) Rate         : 0.0011% (1 <unk> in 94,299 tokens)
+* Corpus Vocabulary Utilization      : 5545 / 10000 pieces used (55.45%)
+* Top 10 Most Frequent Subwords:
+    - 'ን': 1,756 times
+    - '▁ነው።': 1,497 times
+    - '▁ቶም': 1,446 times
+    - '▁': 1,175 times
+    - 'ው': 783 times
+    - '።': 754 times
+    - '▁ነበር።': 712 times
+    - '▁በጣም': 641 times
+    - 'ም': 623 times
+    - '▁የ': 577 times
+------------------------------------------------------------
+
+--- Afaan Oromo Tokenization Metrics ---
+* Total Sentences Evaluated: 14,596
+* Tokens/Sentence:
+    - Mean   : 7.82
+    - Median : 7.0
+    - P95    : 14.0
+    - Max    : 35
+* Words/Sentence (Mean)  : 5.25
+* Compression Ratio (Subwords/Words) : 1.49
+* Unknown Token (<unk>) Rate         : 0.0000% (0 <unk> in 114,101 tokens)
+* Corpus Vocabulary Utilization      : 3924 / 10000 pieces used (39.24%)
+* Top 10 Most Frequent Subwords:
+    - '.': 12,542 times
+    - ''': 3,860 times
+    - '▁hin': 2,841 times
+    - '?': 2,081 times
+    - '▁toom': 1,457 times
+    - 'a': 1,457 times
+    - 'n': 1,229 times
+    - '▁akka': 1,183 times
+    - 'e': 1,047 times
+    - 'ee': 961 times
+------------------------------------------------------------

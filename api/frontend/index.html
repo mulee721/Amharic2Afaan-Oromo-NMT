@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amharic to Afaan Oromo NMT</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Animated Gradient Background */
+    @keyframes animatedGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .bg-animated {
+      background: linear-gradient(-45deg, #090d16, #0f172a, #1e1b4b, #090d16);
+      background-size: 400% 400%;
+      animation: animatedGradient 12s ease infinite;
+    }
+
+    /* Glow Pulse Animation */
+    @keyframes subtleGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.2); }
+      50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.4); }
+    }
+
+    .card-glow {
+      animation: subtleGlow 4s ease-in-out infinite;
+    }
+
+    /* Entry Fade Up */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-up {
+      animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-animated min-h-screen text-slate-100 flex items-center justify-center p-4 font-sans">
+
+  <!-- Main Card Container -->
+ <div class="max-w-2xl w-full bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 shadow-2xl card-glow animate-fade-up">
+
+  <!-- Top Header with Left Profile Picture -->
+  <div class="flex items-center space-x-4 mb-6 pb-6 border-b border-slate-800/80">
+    <div class="relative group">
+      <!-- Profile Avatar -->
+      <img
+        src="prof.png"
+        alt="User Profile"
+        class="w-14 h-14 rounded-2xl object-cover ring-2 ring-indigo-500/40 group-hover:ring-indigo-400 transition-all duration-300 shadow-md shadow-indigo-500/20"
+      />
+      <!-- Online Indicator -->
+      <span class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-900 rounded-full animate-pulse"></span>
+    </div>
+
+    <!-- App Title -->
+    <div>
+      <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+        Amharic &rarr; Afaan Oromo
+      </h1>
+      <p class="text-xs text-slate-400 font-medium tracking-wide mt-0.5">
+        Neural Machine Translation
+      </p>
+    </div>
+  </div>
+
+  <!-- Input Section -->
+  <div class="space-y-4">
+    <div>
+      <label for="srcText" class="block text-sm font-medium text-slate-300 mb-2">Enter Amharic text</label>
+      <textarea  id="srcText"
+        rows="3"
+        class="w-full bg-slate-950/70 border border-slate-800 rounded-2xl p-4 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/80 focus:border-transparent transition-all resize-none shadow-inner text-base"
+        placeholder="የአማርኛ ጽሑፍ እዚህ ያስገቡ..."
+      ></textarea>
+    </div>
+
+    <!-- Error banner (hidden by default) -->
+    <div id="errorBox" class="hidden bg-red-950/50 border border-red-800/60 text-red-300 text-sm rounded-xl px-4 py-2.5"></div>
+
+    <!-- Action Button -->
+    <div>
+      <button  id="translateBtn"
+        onclick="handleTranslate()"
+        class="relative group overflow-hidden bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-500/25 transition-all duration-200 active:scale-95 flex items-center space-x-2"
+      >
+        <span id="btnText">Translate</span>
+        <svg id="spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Output Section -->
+    <div class="pt-2">
+      <label class="block text-sm font-medium text-slate-300 mb-2">Translation</label>
+      <div
+        id="outputBox"
+        class="w-full bg-slate-950/40 border border-slate-800/80 rounded-2xl p-4 min-h-[70px] text-slate-200 transition-all duration-300"
+      >
+        <span class="text-slate-500 select-none">Afaan Oromo text will appear here...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="mt-8 pt-4 border-t border-slate-800/50 text-center">
+    <p class="text-xs text-slate-500"></p>
+  </div>
+
+</div>
+
+  <!-- Live Translation Script -->
+  <script>
+    // Point this at wherever your FastAPI server is actually running.
+    // Example for local dev: uvicorn main:app --reload  ->  http://127.0.0.1:8000
+    const API_BASE_URL = "http://127.0.0.1:8000";
+
+    async function handleTranslate() {
+      const srcText = document.getElementById('srcText');
+      const btn = document.getElementById('translateBtn');
+      const btnText = document.getElementById('btnText');
+      const spinner = document.getElementById('spinner');
+      const outputBox = document.getElementById('outputBox');
+      const errorBox = document.getElementById('errorBox');
+
+      const text = srcText.value.trim();
+
+      errorBox.classList.add('hidden');
+      errorBox.textContent = '';
+
+      if (!text) {
+        errorBox.textContent = 'Please enter some Amharic text first.';
+        errorBox.classList.remove('hidden');
+        return;
+      }
+
+      // Loading state
+      btn.disabled = true;
+      btnText.innerText = 'Translating...';
+      spinner.classList.remove('hidden');
+      outputBox.classList.add('opacity-50', 'animate-pulse');
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/translate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+
+        if (!response.ok) {
+          let detail = `Request failed with status ${response.status}.`;
+          try {
+            const errJson = await response.json();
+            if (errJson && errJson.detail) detail = errJson.detail;
+          } catch (_) {
+            // response body wasn't JSON, keep default message
+          }
+          throw new Error(detail);
+        }
+
+        const data = await response.json();
+
+        if (data.translation) {
+          outputBox.innerHTML = '';
+          outputBox.textContent = data.translation;
+        } else {
+          outputBox.innerHTML = '<span class="text-slate-500 select-none">No translation returned.</span>';
+        }
+      } catch (err) {
+        errorBox.textContent = err.message || 'Something went wrong while translating. Is the API server running?';
+        errorBox.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btnText.innerText = 'Translate';
+        spinner.classList.add('hidden');
+        outputBox.classList.remove('opacity-50', 'animate-pulse');
+      }
+    }
+
+    // Allow Ctrl+Enter / Cmd+Enter to trigger translate from the textarea
+    document.getElementById('srcText').addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        handleTranslate();
+      }
+    });
+  </script>
+</body>
+</html>

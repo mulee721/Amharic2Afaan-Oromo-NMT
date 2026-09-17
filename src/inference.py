@@ -4,6 +4,13 @@ from pathlib import Path
 import sentencepiece as spm
 import torch
 from transformer import TransformerNMT
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="The PyTorch API of nested tensors is in prototype stage",
+    category=UserWarning,
+)
  
 PAD_ID = 0
 UNK_ID = 1
@@ -53,8 +60,7 @@ def load_model(
         raise KeyError(
             "Checkpoint does not contain model configuration."
         )
-
-    model = TransformerNMT(**checkpoint["config"]).to(device)
+    model = TransformerNMT(**checkpoint["config"]["model"]).to(device)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
 
@@ -138,7 +144,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--text", type=str)
     parser.add_argument("--device", default="auto")
-    parser.add_argument("--max-length", type=int, default=256)
+    parser.add_argument("--max-length", type=int, default=64)
 
     return parser.parse_args()
 
@@ -150,24 +156,57 @@ def main() -> None:
     processor = load_sentencepiece(args.sp_model)
     model = load_model(args.checkpoint, device)
 
-    text = args.text
+    print("\n" + "=" * 70)
+    print("AMHARIC → AFAAN OROMO TRANSLATOR")
+    print("=" * 70)
+    print("Type an Amharic sentence to translate.")
+    print("Type 'exit' or 'quit' to stop.")
+    print("=" * 70)
 
-    if not text:
-        text = input("Amharic: ").strip()
+    # If --text was provided, translate it once and exit
+    if args.text:
+        translation = translate(
+            text=args.text,
+            processor=processor,
+            model=model,
+            device=device,
+            max_target_length=args.max_length,
+        )
 
-    if not text:
-        raise ValueError("Input text cannot be empty.")
+        print(f"Amharic: {args.text}")
+        print(f"Afaan Oromo: {translation}")
+        return
 
-    translation = translate(
-        text=text,
-        processor=processor,
-        model=model,
-        device=device,
-        max_target_length=args.max_length,
-    )
+    # Interactive translation loop
+    while True:
+        try:
+            text = input("\nAmharic: ").strip()
 
-    print(f"Amharic: {text}")
-    print(f"Afaan Oromo: {translation}")
+            if text.lower() in {"exit", "quit"}:
+                print("Exiting translator. Goodbye!")
+                break
+
+            if not text:
+                print("Please enter an Amharic sentence.")
+                continue
+
+            translation = translate(
+                text=text,
+                processor=processor,
+                model=model,
+                device=device,
+                max_target_length=args.max_length,
+            )
+
+            print(f"Afaan Oromo: {translation}")
+
+        except KeyboardInterrupt:
+            print("\nExiting translator. Goodbye!")
+            break
+
+        except Exception as e:
+            print(f"Translation error: {e}")
+
 
 if __name__ == "__main__":
     main()

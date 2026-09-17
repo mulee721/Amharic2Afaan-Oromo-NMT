@@ -1,0 +1,20 @@
+# Virtual environments
+.venv/
+.venv-1/
+.venv-2/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Model checkpoints
+checkpoints/
+
+# VS Code
+.vscode/
+
+# Generated figures
+figures/
+
+# Python generated files
+*.pyc

@@ -3,15 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
+
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
-
 PAD_ID = 0
+UNK_ID = 1
 BOS_ID = 2
 EOS_ID = 3
-
 
 @dataclass(frozen=True)
 class Batch:
@@ -25,11 +25,21 @@ class Batch:
             source=self.source.to(device, non_blocking=True),
             target=self.target.to(device, non_blocking=True),
             source_padding_mask=self.source_padding_mask.to(
-                device, non_blocking=True
+                device,
+                non_blocking=True,
             ),
             target_padding_mask=self.target_padding_mask.to(
-                device, non_blocking=True
+                device,
+                non_blocking=True,
             ),
+        )
+
+    def pin_memory(self) -> "Batch":
+        return Batch(
+            source=self.source.pin_memory(),
+            target=self.target.pin_memory(),
+            source_padding_mask=self.source_padding_mask.pin_memory(),
+            target_padding_mask=self.target_padding_mask.pin_memory(),
         )
 
 
@@ -40,17 +50,38 @@ class ParallelIdsDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         self,
         source_path: Path,
         target_path: Path,
-        max_source_length: int = 256,
-        max_target_length: int = 256,
+        max_source_length: int = 64,
+        max_target_length: int = 64,
     ) -> None:
         self.source_path = Path(source_path)
         self.target_path = Path(target_path)
         self.max_source_length = max_source_length
         self.max_target_length = max_target_length
 
-        print(f"📂 Loading dataset files from: {self.source_path.parent}")
-        source_sequences = self._read_sequences(self.source_path)
-        target_sequences = self._read_sequences(self.target_path)
+        if max_source_length <= 0:
+            raise ValueError("max_source_length must be positive.")
+
+        if max_target_length < 3:
+            raise ValueError(
+                "max_target_length must be at least 3 "
+                "for BOS, one token, and EOS."
+            )
+
+        print(
+            f"📂 Loading source data: {self.source_path.name}"
+        )
+
+        source_sequences = self._read_sequences(
+            self.source_path
+        )
+
+        print(
+            f"📂 Loading target data: {self.target_path.name}"
+        )
+
+        target_sequences = self._read_sequences(
+            self.target_path
+        )
 
         if len(source_sequences) != len(target_sequences):
             raise ValueError(
@@ -60,46 +91,73 @@ class ParallelIdsDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
             )
 
         self.examples: list[tuple[list[int], list[int]]] = []
+        skipped_empty_pairs = 0
 
-        for source_ids, target_ids in zip(
-            source_sequences,
-            target_sequences,
-            strict=True,
+        for line_number, (source_ids, target_ids) in enumerate(
+            zip(
+                source_sequences,
+                target_sequences,
+                strict=True,
+            ),
+            start=1,
         ):
             if not source_ids or not target_ids:
+                skipped_empty_pairs += 1
                 continue
 
-            source_ids = source_ids[:max_source_length]
+            if len(source_ids) > max_source_length:
+                raise ValueError(
+                    f"Source sequence is too long at line "
+                    f"{line_number} in {self.source_path.name}: "
+                    f"{len(source_ids)} > {max_source_length}"
+                )
 
-            # Reserve two positions for BOS and EOS.
-            target_ids = target_ids[
-                : max(1, max_target_length - 2)
-            ]
+            target_length_with_specials = len(target_ids) + 2
 
-            if not source_ids or not target_ids:
-                continue
+            if target_length_with_specials > max_target_length:
+                raise ValueError(
+                    f"Target sequence is too long at line "
+                    f"{line_number} in {self.target_path.name}: "
+                    f"{target_length_with_specials} > "
+                    f"{max_target_length} after adding BOS/EOS"
+                )
 
-            source = source_ids
             target = [BOS_ID, *target_ids, EOS_ID]
 
-            self.examples.append((source, target))
+            self.examples.append(
+                (source_ids, target)
+            )
 
         if not self.examples:
             raise ValueError(
                 f"No usable examples found in {self.source_path}"
             )
-            
-        print(f"✓ Loaded {len(self.examples):,} valid sentence pairs from {self.source_path.name}")
+
+        print(
+            f"✓ Loaded {len(self.examples):,} aligned sentence pairs "
+            f"from {self.source_path.name}"
+        )
+
+        if skipped_empty_pairs:
+            print(
+                f"⚠️ Skipped empty pairs: "
+                f"{skipped_empty_pairs:,}"
+            )
 
     @staticmethod
     def _read_sequences(path: Path) -> list[list[int]]:
         if not path.is_file():
-            raise FileNotFoundError(f"ID file not found: {path}")
+            raise FileNotFoundError(
+                f"ID file not found: {path}"
+            )
 
         sequences: list[list[int]] = []
 
         with path.open("r", encoding="utf-8") as file:
-            for line_number, line in enumerate(file, start=1):
+            for line_number, line in enumerate(
+                file,
+                start=1,
+            ):
                 text = line.strip()
 
                 if not text:
@@ -107,10 +165,14 @@ class ParallelIdsDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
                     continue
 
                 try:
-                    sequence = [int(value) for value in text.split()]
+                    sequence = [
+                        int(value)
+                        for value in text.split()
+                    ]
                 except ValueError as exc:
                     raise ValueError(
-                        f"Invalid integer in {path}, line {line_number}"
+                        f"Invalid token ID in {path}, "
+                        f"line {line_number}"
                     ) from exc
 
                 sequences.append(sequence)
@@ -136,6 +198,8 @@ def collate_batch(
     examples: Sequence[tuple[torch.Tensor, torch.Tensor]],
     pad_id: int = PAD_ID,
 ) -> Batch:
+    """Dynamically pad source and target sequences in one batch."""
+
     if not examples:
         raise ValueError("Cannot collate an empty batch.")
 
@@ -166,13 +230,19 @@ def collate_batch(
 
 def create_dataloaders(
     tokenized_dir: Path,
-    batch_size: int = 32,
-    max_source_length: int = 256,
-    max_target_length: int = 256,
+    batch_size: int = 16,
+    max_source_length: int = 64,
+    max_target_length: int = 64,
     num_workers: int = 0,
 ) -> tuple[DataLoader[Batch], DataLoader[Batch], DataLoader[Batch]]:
+    """Create train, validation, and test DataLoaders."""
+
     tokenized_dir = Path(tokenized_dir)
-    print("\n--- Initializing Dataset & Dataloaders ---")
+
+    if batch_size <= 0:
+        raise ValueError("batch_size must be positive.")
+
+    print("\n--- Initializing datasets and dataloaders ---")
 
     train_dataset = ParallelIdsDataset(
         tokenized_dir / "amharic.train.ids.txt",
@@ -220,17 +290,38 @@ def create_dataloaders(
         **loader_kwargs,
     )
 
-    print("✓ Dataloaders successfully created and ready!\n")
+    print("✓ Dataloaders successfully created.\n")
+
     return train_loader, valid_loader, test_loader
 
 
 if __name__ == "__main__":
-    import sys
-    # Quick sanity check block when dataset.py is run directly
-    tokenized_path = Path(__file__).resolve().parent.parent / "tokenizer" / "tokenized"
-    if tokenized_path.exists():
-        print("Testing dataset loader execution...")
-        train_l, valid_l, test_l = create_dataloaders(tokenized_path, batch_size=16)
-        print(f"Total training batches: {len(train_l):,}")
-    else:
-        print(f"Tokenized directory not found at: {tokenized_path}. Run tokenizer.py first.")
+    tokenized_path = (
+        Path(__file__).resolve().parent.parent
+        / "tokenizer"
+        / "tokenized"
+    )
+
+    if not tokenized_path.exists():
+        raise FileNotFoundError(
+            f"Tokenized directory not found: {tokenized_path}\n"
+            "Run the tokenizer pipeline first."
+        )
+
+    print("Testing dataset loader execution...")
+
+    train_loader, valid_loader, test_loader = create_dataloaders(
+        tokenized_dir=tokenized_path,
+        batch_size=16,
+        max_source_length=64,
+        max_target_length=64,
+    )
+
+    batch = next(iter(train_loader))
+    print(f"Training pairs: {len(train_loader.dataset):,}")
+    print(f"Validation pairs: {len(valid_loader.dataset):,}")
+    print(f"Test pairs: {len(test_loader.dataset):,}")
+    print(f"Training batches: {len(train_loader):,}")
+    print(f"Source batch shape: {tuple(batch.source.shape)}")
+    print(f"Target batch shape: {tuple(batch.target.shape)}")
+    print("✓ Dataset sanity check passed.")
