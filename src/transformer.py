@@ -95,6 +95,7 @@ class PositionalEncoding(nn.Module):
 
 
 class TransformerNMT(nn.Module):
+   
     def __init__(
         self,
         vocab_size: int,
@@ -588,6 +589,10 @@ class TransformerNMT(nn.Module):
             if was_training:
                 self.train()
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 51da30f (Prepare NMT project for deployment)
 if __name__ == "__main__":
     from pathlib import Path
 

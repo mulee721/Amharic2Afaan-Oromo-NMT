@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Virtual environments
 .venv/
 .venv-1/
@@ -18,3 +19,14 @@ figures/
 
 # Python generated files
 *.pyc
+=======
+env/
+.venv/
+.venv-1/
+.venv-2/
+__pycache__/
+*.pyc
+.vscode/
+.env
+api/.venv-314/
+>>>>>>> 51da30f (Prepare NMT project for deployment)

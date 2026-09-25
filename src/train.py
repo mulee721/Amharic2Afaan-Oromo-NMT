@@ -593,7 +593,12 @@ def write_history_csv(
 
     with history_path.open(
         "w",
+<<<<<<< HEAD
         newline="", 
+=======
+        newline="",
+        encoding="utf-8",
+>>>>>>> 51da30f (Prepare NMT project for deployment)
     ) as file:
         writer = csv.DictWriter(
             file,

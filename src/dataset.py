@@ -230,7 +230,11 @@ def collate_batch(
 
 def create_dataloaders(
     tokenized_dir: Path,
+<<<<<<< HEAD
     batch_size: int = 16,
+=======
+    batch_size: int = 32,
+>>>>>>> 51da30f (Prepare NMT project for deployment)
     max_source_length: int = 64,
     max_target_length: int = 64,
     num_workers: int = 0,

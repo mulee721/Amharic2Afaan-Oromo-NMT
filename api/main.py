@@ -9,7 +9,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator
 
+<<<<<<< HEAD
 from model_service import TranslationError, TranslationService
+=======
+from api.model_service import TranslationError, TranslationService
+>>>>>>> 51da30f (Prepare NMT project for deployment)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

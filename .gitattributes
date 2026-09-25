@@ -1,0 +1,2 @@
+checkpoints/best_transformer.pt filter=lfs diff=lfs merge=lfs -text
+checkpoints/last_transformer.pt filter=lfs diff=lfs merge=lfs -text

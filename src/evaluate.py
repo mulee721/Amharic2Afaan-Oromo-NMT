@@ -455,6 +455,89 @@ def main() -> None:
         checkpoint_path=args.checkpoint,
         device=device,
     )
+<<<<<<< HEAD
+=======
+
+    processor = load_sentencepiece(
+        model_path=args.sp_model,
+        expected_vocab_size=vocab_size,
+    )
+
+    criterion = nn.CrossEntropyLoss(
+        ignore_index=pad_id,
+    )
+
+    test_loss, test_perplexity, valid_tokens = (
+        evaluate_loss(
+            model=model,
+            loader=test_loader,
+            criterion=criterion,
+            device=device,
+            pad_id=pad_id,
+        )
+    )
+
+    # UPDATED: get sources as well
+    sources, predictions, references = (
+        generate_translations_with_sources(
+            model=model,
+            loader=test_loader,
+            processor=processor,
+            device=device,
+            max_length=max_sequence_length,
+            pad_id=pad_id,
+            bos_id=bos_id,
+            eos_id=eos_id,
+        )
+    )
+
+    bleu = sacrebleu.corpus_bleu(
+        predictions,
+        [references],
+    )
+
+    chrf = sacrebleu.corpus_chrf(
+        predictions,
+        [references],
+    )
+
+    print()
+    print("=" * 100)
+    print("MACHINE TRANSLATION EVALUATION RESULTS")
+    print("=" * 100)
+    print(
+        f"CHECKPOINT       : {args.checkpoint}"
+    )
+    print(
+        f"CHECKPOINT EPOCH : "
+        f"{checkpoint.get('epoch', 'unknown')}"
+    )
+    print(f"DEVICE           : {device}")
+    print(
+        f"TEST PAIRS       : "
+        f"{len(test_loader.dataset):,}"
+    )
+    print(
+        f"VALID TOKENS     : "
+        f"{valid_tokens:,}"
+    )
+    print()
+    print(f"TEST LOSS        : {test_loss:.4f}")
+    print(
+        f"TEST PERPLEXITY  : "
+        f"{test_perplexity:.2f}"
+    )
+    print()
+    print(f"BLEU             : {bleu.score:.2f}")
+    print(f"chrF             : {chrf.score:.2f}")
+    print("=" * 100)
+
+    print_examples(
+        predictions=predictions,
+        references=references,
+        number_of_examples=args.show_examples,
+    )
+>>>>>>> 51da30f (Prepare NMT project for deployment)
 
     processor = load_sentencepiece(
         model_path=args.sp_model,
