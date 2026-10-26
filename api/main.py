@@ -1,4 +1,5 @@
 from __future__ import annotations
+from fastapi.responses import FileResponse
 
 import logging
 from contextlib import asynccontextmanager
@@ -8,6 +9,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator
+
 
 from api.model_service import TranslationError, TranslationService
 
@@ -73,6 +75,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+@app.get("/", include_in_schema=False)
+async def home():
+    return FileResponse(
+        Path(__file__).parent / "frontend" / "index.html"
+    )
+
 
 
 @app.get("/health")
