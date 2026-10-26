@@ -81,7 +81,11 @@ async def home():
         Path(__file__).parent / "frontend" / "index.html"
     )
 
-
+@app.get("/prof.png", include_in_schema=False)
+async def profile_image():
+    return FileResponse(
+        Path(__file__).parent / "frontend" / "prof.png"
+    )
 
 @app.get("/health")
 def health_check() -> dict[str, bool]:
